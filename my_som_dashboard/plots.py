@@ -128,11 +128,11 @@ def build_hex_plot(
         code="""
             const showU = cb_obj.active;
             const colors = showU ? src.data['u_color'] : src.data['color'];
-            // assign a fresh array to ensure change detection
-            src.data['display_color'] = colors.slice();
+            const newData = Object.assign({}, src.data);
+            newData['display_color'] = colors.slice();
+            src.data = newData;
             bar_c.visible = !showU;
             bar_u.visible =  showU;
-            src.change.emit();
         """
     ))
 

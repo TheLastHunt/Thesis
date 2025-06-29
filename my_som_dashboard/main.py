@@ -8,7 +8,7 @@ import os
 from bokeh.io import curdoc
 from bokeh.layouts import column, row
 from bokeh.models import CustomJS
-from bokeh.events import ButtonClick, Tap
+from bokeh.events import ButtonClick
 
 from data_loader import load_data, scale_data
 from som_model import train_som, compute_umatrix
@@ -90,6 +90,22 @@ source_hex.selected.js_on_change('indices', CustomJS(args=dict(
     table_src=source_table
 ), code="""
     const inds = hex_src.selected.indices;
+    if (hex_src.data._skip){
+        hex_src.data._skip = false;
+        return;
+    }
+    if (inds.length === 1 && hex_src.data._last_sel === inds[0]) {
+        hex_src.data._skip = true;
+        hex_src.selected.indices   = [];
+        map_src.selected.indices   = [];
+        table_src.selected.indices = [];
+        hex_src.data._last_sel = null;
+        hex_src.change.emit();
+        map_src.change.emit();
+        table_src.change.emit();
+        return;
+    }
+    hex_src.data._last_sel = inds.length === 1 ? inds[0] : null;
     if (inds.length === 0) {
         map_src.selected.indices   = [];
         table_src.selected.indices = [];
@@ -107,7 +123,6 @@ source_hex.selected.js_on_change('indices', CustomJS(args=dict(
             }
         }
         map_src.selected.indices   = region_inds;
-        // highlight cluster row
         const cl = hex_src.data['hc_cluster'][idx];
         table_src.selected.indices = [cl];
     } else {
@@ -118,13 +133,28 @@ source_hex.selected.js_on_change('indices', CustomJS(args=dict(
 """))
 
 # 6c) Map‐plot → Hex & Table connectivity: single‐unit selection
-
 source_map.selected.js_on_change('indices', CustomJS(args=dict(
     hex_src=source_hex,
     map_src=source_map,
     table_src=source_table
 ), code="""
     const inds = map_src.selected.indices;
+    if (map_src.data._skip){
+        map_src.data._skip = false;
+        return;
+    }
+    if (inds.length === 1 && map_src.data._last_sel === inds[0]) {
+        map_src.data._skip = true;
+        map_src.selected.indices   = [];
+        hex_src.selected.indices   = [];
+        table_src.selected.indices = [];
+        map_src.data._last_sel = null;
+        map_src.change.emit();
+        hex_src.change.emit();
+        table_src.change.emit();
+        return;
+    }
+    map_src.data._last_sel = inds.length === 1 ? inds[0] : null;
     if (inds.length === 0) {
         hex_src.selected.indices   = [];
         table_src.selected.indices = [];
@@ -147,6 +177,7 @@ source_map.selected.js_on_change('indices', CustomJS(args=dict(
     hex_src.change.emit();
     table_src.change.emit();
 """))
+
 
 # 6d) Toggle selection on repeated taps
 p_hex.js_on_event(Tap, CustomJS(args=dict(src=source_hex), code="""
