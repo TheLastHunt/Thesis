@@ -118,6 +118,7 @@ source_hex.selected.js_on_change('indices', CustomJS(args=dict(
 """))
 
 # 6c) Map‐plot → Hex & Table connectivity: single‐unit selection
+
 source_map.selected.js_on_change('indices', CustomJS(args=dict(
     hex_src=source_hex,
     map_src=source_map,
@@ -145,6 +146,35 @@ source_map.selected.js_on_change('indices', CustomJS(args=dict(
     }
     hex_src.change.emit();
     table_src.change.emit();
+"""))
+
+# 6d) Toggle selection on repeated taps
+p_hex.js_on_event(Tap, CustomJS(args=dict(src=source_hex), code="""
+    const inds = src.selected.indices;
+    if (inds.length === 1) {
+        const idx = inds[0];
+        if (src.data._last_sel === idx) {
+            src.selected.indices = [];
+            src.data._last_sel = null;
+        } else {
+            src.data._last_sel = idx;
+        }
+        src.change.emit();
+    }
+"""))
+
+p_map.js_on_event(Tap, CustomJS(args=dict(src=source_map), code="""
+    const inds = src.selected.indices;
+    if (inds.length === 1) {
+        const idx = inds[0];
+        if (src.data._last_sel === idx) {
+            src.selected.indices = [];
+            src.data._last_sel = null;
+        } else {
+            src.data._last_sel = idx;
+        }
+        src.change.emit();
+    }
 """))
 
 # 6d) Toggle selection on repeated taps
