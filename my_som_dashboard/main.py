@@ -93,7 +93,7 @@ source_hex.selected.js_on_change('indices', CustomJS(args=dict(
     if (inds.length === 0) {
         map_src.selected.indices   = [];
         table_src.selected.indices = [];
-    } else {
+    } else if (inds.length === 1) {
         const idx = inds[0];
         // find all regions with matching BMU coords
         const bx = hex_src.data['bmu_x'][idx];
@@ -110,6 +110,8 @@ source_hex.selected.js_on_change('indices', CustomJS(args=dict(
         // highlight cluster row
         const cl = hex_src.data['hc_cluster'][idx];
         table_src.selected.indices = [cl];
+    } else {
+        return;
     }
     map_src.change.emit();
     table_src.change.emit();
@@ -125,7 +127,7 @@ source_map.selected.js_on_change('indices', CustomJS(args=dict(
     if (inds.length === 0) {
         hex_src.selected.indices   = [];
         table_src.selected.indices = [];
-    } else {
+    } else if (inds.length === 1) {
         const idx = inds[0];
         const bx  = map_src.data['bmu_x'][idx];
         const by  = map_src.data['bmu_y'][idx];
@@ -138,6 +140,8 @@ source_map.selected.js_on_change('indices', CustomJS(args=dict(
         hex_src.selected.indices   = hex_i !== null ? [hex_i] : [];
         const cl = map_src.data['hc_cluster'][idx];
         table_src.selected.indices = [cl];
+    } else {
+        return;
     }
     hex_src.change.emit();
     table_src.change.emit();
