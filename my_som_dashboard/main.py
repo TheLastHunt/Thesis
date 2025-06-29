@@ -8,7 +8,7 @@ import os
 from bokeh.io import curdoc
 from bokeh.layouts import column, row
 from bokeh.models import CustomJS
-from bokeh.events import ButtonClick
+from bokeh.events import ButtonClick, Tap
 
 from data_loader import load_data, scale_data
 from som_model import train_som, compute_umatrix
@@ -93,7 +93,7 @@ source_hex.selected.js_on_change('indices', CustomJS(args=dict(
     if (inds.length === 0) {
         map_src.selected.indices   = [];
         table_src.selected.indices = [];
-    } else {
+    } else if (inds.length === 1) {
         const idx = inds[0];
         // find all regions with matching BMU coords
         const bx = hex_src.data['bmu_x'][idx];
@@ -110,6 +110,8 @@ source_hex.selected.js_on_change('indices', CustomJS(args=dict(
         // highlight cluster row
         const cl = hex_src.data['hc_cluster'][idx];
         table_src.selected.indices = [cl];
+    } else {
+        return;
     }
     map_src.change.emit();
     table_src.change.emit();
@@ -125,16 +127,53 @@ source_map.selected.js_on_change('indices', CustomJS(args=dict(
     if (inds.length === 0) {
         hex_src.selected.indices   = [];
         table_src.selected.indices = [];
-    } else {
+    } else if (inds.length === 1) {
         const idx = inds[0];
-        // select same unit in hex plot
-        hex_src.selected.indices   = [idx];
-        // highlight cluster row
+        const bx  = map_src.data['bmu_x'][idx];
+        const by  = map_src.data['bmu_y'][idx];
+        const xs  = hex_src.data['bmu_x'];
+        const ys  = hex_src.data['bmu_y'];
+        let hex_i = null;
+        for (let i = 0; i < xs.length; i++) {
+            if (xs[i] === bx && ys[i] === by) { hex_i = i; break; }
+        }
+        hex_src.selected.indices   = hex_i !== null ? [hex_i] : [];
         const cl = map_src.data['hc_cluster'][idx];
         table_src.selected.indices = [cl];
+    } else {
+        return;
     }
     hex_src.change.emit();
     table_src.change.emit();
+"""))
+
+# 6d) Toggle selection on repeated taps
+p_hex.js_on_event(Tap, CustomJS(args=dict(src=source_hex), code="""
+    const inds = src.selected.indices;
+    if (inds.length === 1) {
+        const idx = inds[0];
+        if (src.data._last_sel === idx) {
+            src.selected.indices = [];
+            src.data._last_sel = null;
+        } else {
+            src.data._last_sel = idx;
+        }
+        src.change.emit();
+    }
+"""))
+
+p_map.js_on_event(Tap, CustomJS(args=dict(src=source_map), code="""
+    const inds = src.selected.indices;
+    if (inds.length === 1) {
+        const idx = inds[0];
+        if (src.data._last_sel === idx) {
+            src.selected.indices = [];
+            src.data._last_sel = null;
+        } else {
+            src.data._last_sel = idx;
+        }
+        src.change.emit();
+    }
 """))
 
 # 7) Assemble layout
