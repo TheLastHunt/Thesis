@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    {{ bokeh_css }}
+    {{ bokeh_js }}
+    {% block head %}
+    <style>
+      html, body { margin:0; padding:0; width:100vw; height:100vh; }
+      #dashboard { display:flex; flex-direction:column; height:100%; }
+      .bk-root    { flex-grow:1; }
+    </style>
+    {% endblock %}
+  </head>
+  <body>
+    <div id="dashboard">
+      <header style="padding:1em; background:#333; color:white;">
+        <h1>My Geodemographic Explorer</h1>
+      </header>
+      <main style="flex:1;">
+        {% block app %}
+          {{ embed(roots.layout) }}
+        {% endblock %}
+      </main>
+      <footer style="padding:0.5em; background:#f0f0f0; text-align:center;">
+        &copy; 2025
+      </footer>
+    </div>
+    {{ plot_script() }}
+  </body>
+</html>
