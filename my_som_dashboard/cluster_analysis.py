@@ -36,7 +36,8 @@ def assign_clusters(
     node_labels = hc.fit_predict(flat_weights)
 
     # 2) For each observation, find its Best Matching Unit (BMU)
-    values = data_df.values
+    features = data_df.drop(columns=["hex_x", "hex_y"], errors="ignore")
+    values = features.values
     bmus = [som.winner(obs) for obs in values]
     bmu_x = [pt[0] for pt in bmus]
     bmu_y = [pt[1] for pt in bmus]
@@ -65,7 +66,15 @@ def compute_cluster_means(
     Returns:
         A DataFrame with 'hc_cluster' and the mean of each numeric column.
     """
-    numeric_cols = hex_df.select_dtypes(include=[float, int]).columns.drop('hc_cluster')
+    numeric_cols = (
+        hex_df
+        .select_dtypes(include=[float, int])
+        .columns
+    )
+    numeric_cols = [
+        c for c in numeric_cols
+        if c not in {"hc_cluster", "bmu_x", "bmu_y", "hex_x", "hex_y"}
+    ]
     cluster_means = (
         hex_df
         .groupby('hc_cluster')[numeric_cols]
