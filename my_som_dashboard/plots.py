@@ -60,7 +60,8 @@ def build_hex_plot(
                 'color':      cluster_palette[int(node_labels[idx])],
                 'alpha':      1.0,
             })
-    node_df     = pd.DataFrame.from_records(records)
+    node_df = pd.DataFrame.from_records(records)
+    node_df["display_color"] = node_df["color"]
     node_source = ColumnDataSource(node_df)
 
     # 3) build the figure
@@ -77,22 +78,22 @@ def build_hex_plot(
     hex_renderer = p_hex.hex_tile(
         q="bmu_x", r="bmu_y", size=1, orientation="flattop",
         source=node_source,
-        fill_color={"field": "color"},
+        fill_color={"field": "display_color"},
         fill_alpha="alpha",
         line_color="#ffffff",
         line_width=0.5,
     )
     hex_renderer.hover_glyph = HexTile(
         q="bmu_x", r="bmu_y", size=1, orientation="flattop",
-        fill_color={"field": "color"}, line_color="#000000"
+        fill_color={"field": "display_color"}, line_color="#000000"
     )
     hex_renderer.selection_glyph = HexTile(
         q="bmu_x", r="bmu_y", size=1, orientation="flattop",
-        fill_color={"field": "color"}, line_color="#000000"
+        fill_color={"field": "display_color"}, line_color="#000000"
     )
     hex_renderer.nonselection_glyph = HexTile(
         q="bmu_x", r="bmu_y", size=1, orientation="flattop",
-        fill_color={"field": "color"}, fill_alpha=0.2, line_color="#ffffff"
+        fill_color={"field": "display_color"}, fill_alpha=0.2, line_color="#ffffff"
     )
 
     # 5) exactly one HoverTool, one tooltip
@@ -123,16 +124,15 @@ def build_hex_plot(
 
     # 7) wire up U-matrix toggle
     toggle.js_on_change('active', CustomJS(
-        args=dict(src=node_source, rend=hex_renderer, bar_c=cb_cl, bar_u=cb_u),
+        args=dict(src=node_source, bar_c=cb_cl, bar_u=cb_u),
         code="""
-            const f = cb_obj.active ? 'u_color' : 'color';
-            rend.glyph.fill_color              = { field: f };
-            rend.hover_glyph.fill_color        = { field: f };
-            rend.selection_glyph.fill_color    = { field: f };
-            rend.nonselection_glyph.fill_color = { field: f };
-            bar_c.visible = !cb_obj.active;
-            bar_u.visible =  cb_obj.active;
-            src.change.emit();
+            const showU = cb_obj.active;
+            const colors = showU ? src.data['u_color'] : src.data['color'];
+            const newData = Object.assign({}, src.data);
+            newData['display_color'] = colors.slice();
+            src.data = newData;
+            bar_c.visible = !showU;
+            bar_u.visible =  showU;
         """
     ))
 
