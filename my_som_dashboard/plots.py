@@ -127,8 +127,9 @@ def build_hex_plot(
         args=dict(src=node_source, bar_c=cb_cl, bar_u=cb_u),
         code="""
             const showU = cb_obj.active;
-            src.data['display_color'] = showU ? src.data['u_color']
-                                              : src.data['color'];
+            const colors = showU ? src.data['u_color'] : src.data['color'];
+            // assign a fresh array to ensure change detection
+            src.data['display_color'] = colors.slice();
             bar_c.visible = !showU;
             bar_u.visible =  showU;
             src.change.emit();
