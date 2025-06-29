@@ -8,7 +8,7 @@ import os
 from bokeh.io import curdoc
 from bokeh.layouts import column, row
 from bokeh.models import CustomJS
-from bokeh.events import ButtonClick
+from bokeh.events import ButtonClick, Tap
 
 from data_loader import load_data, scale_data
 from som_model import train_som, compute_umatrix
@@ -90,10 +90,26 @@ source_hex.selected.js_on_change('indices', CustomJS(args=dict(
     table_src=source_table
 ), code="""
     const inds = hex_src.selected.indices;
+    if (hex_src.data._skip){
+        hex_src.data._skip = false;
+        return;
+    }
+    if (inds.length === 1 && hex_src.data._last_sel === inds[0]) {
+        hex_src.data._skip = true;
+        hex_src.selected.indices   = [];
+        map_src.selected.indices   = [];
+        table_src.selected.indices = [];
+        hex_src.data._last_sel = null;
+        hex_src.change.emit();
+        map_src.change.emit();
+        table_src.change.emit();
+        return;
+    }
+    hex_src.data._last_sel = inds.length === 1 ? inds[0] : null;
     if (inds.length === 0) {
         map_src.selected.indices   = [];
         table_src.selected.indices = [];
-    } else {
+    } else if (inds.length === 1) {
         const idx = inds[0];
         // find all regions with matching BMU coords
         const bx = hex_src.data['bmu_x'][idx];
@@ -107,9 +123,10 @@ source_hex.selected.js_on_change('indices', CustomJS(args=dict(
             }
         }
         map_src.selected.indices   = region_inds;
-        // highlight cluster row
         const cl = hex_src.data['hc_cluster'][idx];
         table_src.selected.indices = [cl];
+    } else {
+        return;
     }
     map_src.change.emit();
     table_src.change.emit();
@@ -122,20 +139,45 @@ source_map.selected.js_on_change('indices', CustomJS(args=dict(
     table_src=source_table
 ), code="""
     const inds = map_src.selected.indices;
+    if (map_src.data._skip){
+        map_src.data._skip = false;
+        return;
+    }
+    if (inds.length === 1 && map_src.data._last_sel === inds[0]) {
+        map_src.data._skip = true;
+        map_src.selected.indices   = [];
+        hex_src.selected.indices   = [];
+        table_src.selected.indices = [];
+        map_src.data._last_sel = null;
+        map_src.change.emit();
+        hex_src.change.emit();
+        table_src.change.emit();
+        return;
+    }
+    map_src.data._last_sel = inds.length === 1 ? inds[0] : null;
     if (inds.length === 0) {
         hex_src.selected.indices   = [];
         table_src.selected.indices = [];
-    } else {
+    } else if (inds.length === 1) {
         const idx = inds[0];
-        // select same unit in hex plot
-        hex_src.selected.indices   = [idx];
-        // highlight cluster row
+        const bx  = map_src.data['bmu_x'][idx];
+        const by  = map_src.data['bmu_y'][idx];
+        const xs  = hex_src.data['bmu_x'];
+        const ys  = hex_src.data['bmu_y'];
+        let hex_i = null;
+        for (let i = 0; i < xs.length; i++) {
+            if (xs[i] === bx && ys[i] === by) { hex_i = i; break; }
+        }
+        hex_src.selected.indices   = hex_i !== null ? [hex_i] : [];
         const cl = map_src.data['hc_cluster'][idx];
         table_src.selected.indices = [cl];
+    } else {
+        return;
     }
     hex_src.change.emit();
     table_src.change.emit();
 """))
+
 
 # 7) Assemble layout
 layout = column(
