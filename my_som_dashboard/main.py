@@ -8,7 +8,7 @@ import os
 from bokeh.io import curdoc
 from bokeh.layouts import column, row
 from bokeh.models import CustomJS
-from bokeh.events import ButtonClick
+from bokeh.events import ButtonClick, Tap
 
 from data_loader import load_data, scale_data
 from som_model import train_som, compute_umatrix
@@ -177,6 +177,7 @@ source_map.selected.js_on_change('indices', CustomJS(args=dict(
     hex_src.change.emit();
     table_src.change.emit();
 """))
+
 
 
 # 6d) Toggle selection on repeated taps
